@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# @(#) cy version 3.0.0 11/14/2016
+# @(#) cy version 3.0.1 11/7/2017
 #
 #  USAGE:
 #    init
@@ -35,9 +35,10 @@ APP_URL='git@github.com:cytoscape/'
 REPOSITORIES=(. parent api impl support gui-distribution app-developer)
 
 # List of Core Apps
-CORE_APPS=(biopax command-dialog core-apps-meta cyREST datasource-biogrid \
+CORE_APPS=(biopax command-dialog core-apps-meta cyREST \
 json idmapper network-analyzer network-merge opencl-cycl opencl-layout \
-psi-mi sbml welcome webservice-psicquic-client webservice-biomart-client)
+psi-mi sbml welcome webservice-psicquic-client webservice-biomart-client \
+cx diffusion cy-ndex-2 copycat-layout cyBrowser)
 
 #######################################
 # Handling command-line arguments     #
@@ -236,6 +237,18 @@ function update-apps {
   cd ..
 }
 
+function validate-apps {
+  cd apps
+
+  for app in "${CORE_APPS[@]}"; do
+    cd $app
+    (mvn validate | grep Building \
+    | awk '{for (i=3; i<NF; i++) printf $i " "; print $NF}') || { echo Could not validate: $REPO_URL; exit 1; }
+    cd ..
+  done
+  cd ..
+}
+
 function build-apps {
   cd apps
   echo "Core apps: $CORE_APPS"
@@ -280,6 +293,18 @@ function init-all {
   cd -
 }
 
+function run-all {
+  echo "------------------------------------------------------------------------"
+  echo "Executing command: $TARGET_DIR"
+  for REPO in "${REPOSITORIES[@]}"; do
+    echo "--in $REPO"
+		pushd $REPO > /dev/null
+		$TARGET_DIR
+    popd > /dev/null
+		echo "------------------------------------------------------------------------"
+  done
+}
+
 ###############################################################################
 # Main workflow
 ###############################################################################
@@ -299,7 +324,8 @@ case $COMMAND in
   pull-apps )    update-apps ;;
   build-apps )    build-apps ;;
   switch-apps )  switch-apps ;;
-
+  validate-apps )  validate-apps ;;
+  run-all ) run-all ;;
   * )      echo "Invalid command $COMMAND: $ERROR_MESSAGE"
           exit 1;;
 esac
